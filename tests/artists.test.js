@@ -67,7 +67,7 @@ describe("/artists", () => {
              .catch(error => done(error))
        })
      })      
-describe("GET /artists/:artistId", () => {
+describe("GET /artists/:id", () => {
    it("gets artist record by ID", (done) => {
      const artist = artists[0];
      request(app)
@@ -79,7 +79,59 @@ describe("GET /artists/:artistId", () => {
          done();
        })
        .catch((error) => done(error));
+      })
+      it("returns a 404 if the artist does not exist", (done) => {
+         request(app)
+           .get("/artists/12345")
+           .then((res) => {
+             expect(res.status).to.equal(404);
+             expect(res.body.error).to.equal("The artist could not be found.");
+             done();
+           })
+           .catch((error) => done(error));
+       });
+     });
+     describe("PATCH /artists/:id", () => {
+       it("updates artist genre by id", (done) => {
+         const artist = artists[0];
+         request(app)
+           .patch(`/artists/${artist.id}`)
+           .send({ genre: "Psychedelic Rock" })
+           .then((res) => {
+             expect(res.status).to.equal(200);
+             Artist.findByPk(artist.id, { raw: true }).then((updatedArtist) => {
+               expect(updatedArtist.genre).to.equal("Psychedelic Rock");
+               done();
+             });
+           })
+           .catch((error) => done(error));
+       });  
+      it("updates artist name by id", (done) => {
+        const artist = artists[0];
+        request(app)
+          .patch(`/artists/${artist.id}`)
+          .send({ name: "Devo" })
+          .then((res) => {
+            expect(res.status).to.equal(200);
+            Artist.findByPk(artist.id, { raw: true }).then((updatedArtist) => {
+              expect(updatedArtist.name).to.equal("Devo");
+              done();
+            });
+          })
+          .catch((error) => done(error));
+      });
+
+      //No Idea how to make this 404 so need to take a good look later
+      /*it("returns a 404 if the artist update does not exist", (done) => {
+         request(app)
+           .get("/artists/12345")
+           .then((res) => {
+             expect(res.status).to.equal(404);
+             expect(res.body.error).to.equal("The artist could not be found.");
+             done();
+           })
+           .catch((error) => done(error));
+       });*/
+    });
    });
-});
-})
-})
+ });

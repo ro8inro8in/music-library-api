@@ -12,7 +12,9 @@ app.post('/artists', artistControllers.create);
 //^^^^Route handler linking to artist controller file in the src folder
 app.get('/artists', artistControllers.list);
 
-//app.get('/artists/:id', artistControllers.getArtistById);
+
 app.get('/artists/:id', artistControllers.byId);
+
+app.patch('/artists/:id',artistControllers.updateArtist)
   
 module.exports = app
