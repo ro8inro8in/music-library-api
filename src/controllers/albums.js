@@ -1,24 +1,56 @@
-const { Album, Artists } = require("../models");
-
-exports.create = (req, res) => {
-  const data = req.body;
-  data.ArtistId = req.params.id;
-  //console.log(album);
-  Album.create(req.body).then((album) => res.status(201).json(album));
-};
+const { Album, Artist } = require("../models");
 exports.list = (req, res) => {
   Artists.findAll().then((artists) => res.status(200).json(artists));
 };
-
 exports.albumCreate = (req, res) => {
-  console.log(req.params.id)
-  Album.findByPk(req.params.id)
-   .then((res) => {
-          expect(res.status).to.equal(404);
-          expect(res.body.error).to.equal('The artist could not be found.');
-          Album.findAll().then((albums) => {
-            expect(albums.length).to.equal(0);
-            done();
-          });
-        }).catch(error => done(error));
+  Artist.findByPk(req.params.id)
+    .then((artist) => {
+      if (!artist) {
+        res.status(404).json({ error: "The artist could not be found." });
+      } else {
+        const data = req.body;
+        data.artistId = req.params.id;
+        Album.create(data, { include: "artist" }).then((album) =>
+          res.status(201).json(album)
+        );
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json(error);
+    });
+};
+//-----------------------------------------------------------------------------
+exports.getAlbumById = (req, res) => {
+  const { id } = req.params;
+  Album.findByPk(id).then((album) => {
+    if (!album) {
+      res.status(404).json({ error: "The album could not be found." });
+    } else {
+      res.status(200).json(album);
+    }
+  });
+};
+
+exports.updateAlbum = (req, res) => {
+  const { id } = req.params;
+  Album.update(req.body, { where: { id } }).then(([rowsUpdated]) => {
+    if (!rowsUpdated) {
+      res.status(404).json({ error: "The album could not be found." });
+    } else {
+      res.status(200).json(rowsUpdated);
+    }
+  });
+};
+exports.removeAlbum = (req, res) => {
+  const { id } = req.params;
+  Album.destroy({ where: { id } })
+    .then((rowsDeleted) => {
+      if (!rowsDeleted) {
+        res.status(404).json({ error: "The artist could not be found." });
+      } else {
+        res.status(204).json({ message: "Success files deleted." });
+      }
+    })
+    .catch((err) => console.log(err));
 };
