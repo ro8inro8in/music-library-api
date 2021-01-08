@@ -11,7 +11,8 @@ const connection = mysql.createConnection({
   host: DB_HOST,
   user: DB_USER,
   password: DB_PASSWORD,
-  port: DB_PORT,
+  port: DB_PORT, 
 });
-
+// This is basically telling Sequelize how
+// and what to use to connect to our database
 connection.query(`DROP DATABASE ${DB_NAME}`, () => connection.end());
