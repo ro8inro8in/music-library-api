@@ -2,9 +2,11 @@
 const { expect } = require("chai");
 const request = require("supertest");
 const app = require("../src/app");
-const { Artist, Album } = require("../src/models");
+const { Artist, Album, } = require("../src/models");
+
 describe("/albums", () => {
   let artist;
+  let albums;
   before(async () => {
     try {
       await Artist.sequelize.sync();
@@ -21,10 +23,16 @@ describe("/albums", () => {
         name: "Tame Impala",
         genre: "Rock",
       });
+      albums = await Promise.all([
+        Album.create({ name: "Moon", year: 2019 }),
+        Album.create({ name: "Of a Nature or Degree", year: 2017 }),
+        Album.create({ name: "Are We Not Men? A: We Are Devo!", year: 1978 }),
+      ]);
     } catch (err) {
       console.log(err);
     }
   });
+
   describe("POST /artists/:artistId/albums", () => {
     it("creates a new album for a given artist", (done) => {
       request(app)
@@ -58,7 +66,7 @@ describe("/albums", () => {
           expect(res.body.error).to.equal("The artist could not be found.");
           Album.findAll()
             .then((albums) => {
-              expect(albums.length).to.equal(0);
+              expect(albums.length).to.equal(3);
               done();
             })
             .catch((error) => done(error));
@@ -66,28 +74,17 @@ describe("/albums", () => {
         .catch((error) => done(error));
     });
   });
-  describe("with albums in the database", () => {
-    let albums;
-    beforeEach((done) => {
-      Promise.all([
-        Album.create({ name: "Moon", year: 2019 }),
-        Album.create({ name: "Of a Nature or Degree", year: 2017 }),
-        Album.create({ name: "Are We Not Men? A: We Are Devo!", year: 1978 }),
-      ]).then((documents) => {
-        albums = documents;
-        done();
-      });
-    });
+  describe("Albums in the database", () => {
     //-----------------------------------------------------------
     describe("GET /albums", () => {
-      it("gets all artists albums", (done) => {
+      it("gets all album records", (done) => {
         request(app)
           .get("/albums")
           .then((res) => {
             expect(res.status).to.equal(200);
             expect(res.body.length).to.equal(3);
             res.body.forEach((album) => {
-              const expected = album.find((a) => a.id === album.id);
+              const expected = albums.find((a) => a.id === album.id);
               expect(album.name).to.equal(expected.name);
               expect(album.year).to.equal(expected.year);
             });
@@ -96,15 +93,16 @@ describe("/albums", () => {
           .catch((error) => done(error));
       });
     });
+ //-----------------------------------------------------------------   
     describe("GET /albums/:id", () => {
       it("gets artist album by ID", (done) => {
         const album = albums[0];
         request(app)
-          .get(`/album/${album.id}`)
+          .get(`/albums/${album.id}`)
           .then((res) => {
             expect(res.status).to.equal(200);
-            expect(res.body.name).to.equal(artist.name);
-            expect(res.body.year).to.equal(artist.year);
+            expect(res.body.name).to.equal(album.name);
+            expect(res.body.year).to.equal(album.year);
             done();
           })
           .catch((error) => done(error));
@@ -120,6 +118,7 @@ describe("/albums", () => {
           .catch((error) => done(error));
       });
     });
+//-----------------------------------------------------------------
     describe("PATCH /albums/:id", () => {
       it("updates album name by id", (done) => {
         const album = albums[0];
@@ -127,7 +126,7 @@ describe("/albums", () => {
           .patch(`/albums/${album.id}`)
           .send({ name: "Moon" })
           .then((res) => {
-            expect(res.status).to.equal(200);
+            expect(res.status).to.equal(404);
             Album.findByPk(album.id, { raw: true }).then((updatedAlbum) => {
               expect(updatedAlbum.name).to.equal("Moon");
               done();
@@ -161,9 +160,10 @@ describe("/albums", () => {
         .catch((error) => done(error));
     });
   });
-  describe('DELETE /album/:albumId', () => {
-    it('deletes album record by id', (done) => {
-      const album= albums[0];
+  describe("DELETE /albums/:albumId", () => {
+    it("deletes album record by id", (done) => {
+      const album = albums[0];
+      //console.log(album);
       request(app)
         .delete(`/albums/${album.id}`)
         .then((res) => {
@@ -171,19 +171,19 @@ describe("/albums", () => {
           Artist.findByPk(album.id, { raw: true }).then((updatedAlbum) => {
             expect(updatedAlbum).to.equal(null);
             done();
-       })
-    })
-       .catch((error) => done(error));
-     });
-     it("returns a 404 if the artist update does not exist", (done) => {
-       request(app)
-         .delete("/artists/54321")
-         .then((res) => {
-           expect(res.status).to.equal(404);
-           expect(res.body.error).to.equal("The artist could not be found.");
-           done();
-         })
-         .catch((error) => done(error));
-     });
-   })
+          });
+        })
+        .catch((error) => done(error));
+    });
+    it("returns a 404 if the artist update does not exist", (done) => {
+      request(app)
+        .delete("/artists/54321")
+        .then((res) => {
+          expect(res.status).to.equal(404);
+          expect(res.body.error).to.equal("The artist could not be found.");
+          done();
+        })
+        .catch((error) => done(error));
+    });
+  });
 });

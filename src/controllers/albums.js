@@ -1,6 +1,6 @@
 const { Album, Artist } = require("../models");
 exports.list = (req, res) => {
-  Artists.findAll().then((artists) => res.status(200).json(artists));
+  Album.findAll().then((albums) => res.status(200).json(albums));
 };
 exports.albumCreate = (req, res) => {
   Artist.findByPk(req.params.id)
@@ -43,13 +43,16 @@ exports.updateAlbum = (req, res) => {
   });
 };
 exports.removeAlbum = (req, res) => {
+  //console.log("anything")
   const { id } = req.params;
+  //console.log(id)
   Album.destroy({ where: { id } })
     .then((rowsDeleted) => {
+     // console.log(rowsDeleted)
       if (!rowsDeleted) {
-        res.status(404).json({ error: "The artist could not be found." });
+        res.status(404).json({ error: "The album could not be found." });
       } else {
-        res.status(204).json({ message: "Success files deleted." });
+        res.status(204).json({ message: "Deleted Successfully" });
       }
     })
     .catch((err) => console.log(err));
